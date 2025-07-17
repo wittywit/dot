@@ -91,6 +91,8 @@ export function useTasks() {
       end: { dateTime: taskData.endDateTime || taskData.dateTime },
       recurrence: taskData.recurrence ? [taskData.recurrence] : undefined,
     };
+    // Log the event object for debugging
+    console.log("[addTask] Event object to send:", event);
     if (!navigator.onLine) {
       // Queue offline
       setOfflineQueue([...getOfflineQueue(), { type: "add", event }]);
@@ -98,6 +100,7 @@ export function useTasks() {
       return;
     }
     try {
+      console.log("[addTask] Using access token:", token);
       const res = await fetch(CALENDAR_API_URL, {
         method: "POST",
         headers: {
@@ -107,12 +110,29 @@ export function useTasks() {
         body: JSON.stringify(event),
       });
       if (!res.ok) {
-        throw new Error("Failed to add task to Google Calendar");
+        const errorText = await res.text();
+        console.error("[addTask] Google Calendar API error:", res.status, errorText);
+        if (res.status === 401 || res.status === 403) {
+          alert("Your Google session has expired or is invalid. Please sign in again.\n\n" + errorText);
+          window.dispatchEvent(new Event("dot-gcal-token-updated"));
+        } else {
+          alert("Failed to add task. Google API error: " + errorText);
+        }
+        return;
       }
       const data = await res.json();
       setTasks((prev) => [...prev, data]);
     } catch (err) {
-      alert("Failed to add task. Please check your sign-in and try again.");
+      console.error("[addTask] Exception:", err);
+      let msg = "";
+      if (err instanceof Error) {
+        msg = err.message;
+      } else if (typeof err === "string") {
+        msg = err;
+      } else {
+        msg = JSON.stringify(err);
+      }
+      alert("Failed to add task. Please check your sign-in and try again.\n\n" + msg);
     }
   };
 
