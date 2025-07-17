@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "DayPlanner",
     description: "A simple day planner with tasks and reminders",
     start_url: "/",
-    display: "standalone",
+    display: "fullscreen",
     background_color: "#ffffff",
     theme_color: "#000000",
     icons: [
