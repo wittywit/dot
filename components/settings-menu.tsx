@@ -10,6 +10,7 @@ import { X, User, Clock, Bell, Moon, Palette, CheckCircle } from "lucide-react"
 import { useSettings } from "../hooks/use-settings"
 import { useNotifications } from "../hooks/use-notifications"
 import type { AccentColor } from "../types/task"
+import GoogleCalendarSync from "./GoogleCalendarSync"
 
 interface SettingsMenuProps {
   onClose: () => void
@@ -248,12 +249,18 @@ export function SettingsMenu({ onClose }: SettingsMenuProps) {
         </div>
 
         <div className="flex gap-3 mt-6">
-          <Button variant="outline" onClick={onClose} className="flex-1 bg-transparent">
-            Cancel
-          </Button>
-          <Button onClick={handleSave} className="flex-1 bg-accent-color hover:bg-accent-color-hover text-white">
+          <Button className="w-full" onClick={handleSave}>
             Save
           </Button>
+          <Button className="w-full" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+        </div>
+
+        {/* Account Section */}
+        <div className="mt-8 pt-6 border-t">
+          <h3 className="text-lg font-semibold mb-2">Account</h3>
+          <GoogleCalendarSync onRefresh={() => window.location.reload()} />
         </div>
       </div>
     </div>

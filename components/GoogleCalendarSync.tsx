@@ -8,7 +8,6 @@ const DISCOVERY_DOCS = [
 ];
 const SCOPES = "https://www.googleapis.com/auth/calendar";
 
-// Load GIS script
 function loadGISScript(cb: () => void) {
   if (document.getElementById("google-identity-services")) return cb();
   const script = document.createElement("script");
@@ -27,11 +26,10 @@ declare global {
   }
 }
 
-export default function GoogleCalendarSync() {
+export default function GoogleCalendarSync({ onRefresh }: { onRefresh?: () => void }) {
   const [gapiLoaded, setGapiLoaded] = useState(false);
   const [gisLoaded, setGisLoaded] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
-  const [events, setEvents] = useState<any[]>([]);
   const [user, setUser] = useState<{ name: string; email: string; imageUrl?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const tokenClient = useRef<any>(null);
@@ -78,13 +76,13 @@ export default function GoogleCalendarSync() {
             setIsSignedIn(true);
             setLoading(false);
             fetchUserInfo();
-            fetchEvents(tokenResponse.access_token);
+            if (onRefresh) onRefresh();
           }
         },
       });
     }
     setLoading(false);
-  }, [gisLoaded]);
+  }, [gisLoaded, onRefresh]);
 
   // Fetch user info using Google People API
   const fetchUserInfo = async () => {
@@ -118,35 +116,19 @@ export default function GoogleCalendarSync() {
   const handleSignOut = () => {
     setIsSignedIn(false);
     setUser(null);
-    setEvents([]);
     accessToken.current = null;
-    // Remove Google session
     if (window.google && window.google.accounts && window.google.accounts.id) {
       window.google.accounts.id.disableAutoSelect();
     }
   };
 
-  // Fetch events
-  const fetchEvents = (token?: string) => {
-    const at = token || accessToken.current;
-    if (!at || !gapiLoaded) return;
-    window.gapi.client.setToken({ access_token: at });
-    window.gapi.client.calendar.events
-      .list({
-        calendarId: "primary",
-        timeMin: new Date().toISOString(),
-        showDeleted: false,
-        singleEvents: true,
-        maxResults: 10,
-        orderBy: "startTime",
-      })
-      .then((response: any) => {
-        setEvents(response.result.items || []);
-      });
+  // Manual refresh
+  const handleRefresh = () => {
+    if (onRefresh) onRefresh();
   };
 
   return (
-    <div style={{ margin: "2em 0", textAlign: "center" }}>
+    <div style={{ textAlign: "center", padding: 12 }}>
       {loading && <div>Loading Google Calendar integration...</div>}
       {!loading && !isSignedIn && (
         <button onClick={handleSignIn} style={{ padding: "0.7em 2em", fontSize: "1.1em", borderRadius: 8, background: "#4285F4", color: "#fff", border: "none", cursor: "pointer" }}>
@@ -155,31 +137,24 @@ export default function GoogleCalendarSync() {
         </button>
       )}
       {!loading && isSignedIn && user && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
-          {user.imageUrl && <img src={user.imageUrl} alt={user.name} style={{ width: 36, height: 36, borderRadius: "50%" }} />}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+          {user.imageUrl && <img src={user.imageUrl} alt={user.name} style={{ width: 32, height: 32, borderRadius: "50%" }} />}
           <div style={{ textAlign: "left" }}>
             <div style={{ fontWeight: 600 }}>{user.name}</div>
             <div style={{ fontSize: "0.95em", color: "#555" }}>{user.email}</div>
             <div style={{ fontSize: "0.9em", color: "#388e3c", marginTop: 2 }}>Signed in with Google</div>
           </div>
-          <button onClick={handleSignOut} style={{ marginLeft: 16, padding: "0.5em 1.2em", fontSize: "1em", borderRadius: 8, background: "#eee", color: "#222", border: "none", cursor: "pointer" }}>
-            Sign out
-          </button>
-          <button onClick={() => fetchEvents()} style={{ marginLeft: 8, padding: "0.5em 1.2em", fontSize: "1em", borderRadius: 8, background: "#4285F4", color: "#fff", border: "none", cursor: "pointer" }}>
-            Refresh Events
-          </button>
         </div>
       )}
       {!loading && isSignedIn && (
-        <ul style={{ marginTop: 16 }}>
-          {events.map((event) => (
-            <li key={event.id} style={{ marginBottom: 8 }}>
-              <strong>{event.summary}</strong>
-              <br />
-              {event.start?.dateTime || event.start?.date}
-            </li>
-          ))}
-        </ul>
+        <div style={{ marginTop: 12 }}>
+          <button onClick={handleSignOut} style={{ marginRight: 8, padding: "0.5em 1.2em", fontSize: "1em", borderRadius: 8, background: "#eee", color: "#222", border: "none", cursor: "pointer" }}>
+            Sign out
+          </button>
+          <button onClick={handleRefresh} style={{ padding: "0.5em 1.2em", fontSize: "1em", borderRadius: 8, background: "#4285F4", color: "#fff", border: "none", cursor: "pointer" }}>
+            Refresh Events
+          </button>
+        </div>
       )}
     </div>
   );
