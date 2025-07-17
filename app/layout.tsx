@@ -21,6 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="manifest" href="/dot/manifest.webmanifest" />
         <script src="https://apis.google.com/js/api.js"></script>
       </head>
       <body className={inter.className}>
