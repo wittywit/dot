@@ -1,8 +1,11 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import { withPWA } from 'next-pwa';
+
+const isProd = process.env.NODE_ENV === 'production';
+
+export default withPWA({
   output: 'export',
   trailingSlash: true,
-  basePath: process.env.NODE_ENV === 'production' ? '/dot' : '',
+  basePath: isProd ? '/dot' : '',
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -11,7 +14,11 @@ const nextConfig = {
   },
   images: {
     unoptimized: true
-  }
-}
-
-export default nextConfig
+  },
+  pwa: {
+    dest: 'public',
+    disable: !isProd,
+    register: true,
+    skipWaiting: true,
+  },
+});
