@@ -30,7 +30,7 @@ export default function DayPlannerApp() {
   const { settings } = useSettings()
   const { isDarkMode } = useDarkMode()
   const stats = useTaskStats(tasks)
-  const { isSignedIn, user } = useGoogleAuth();
+  const { isSignedIn, user, signInRequired, signIn } = useGoogleAuth();
 
   const { requestPermission, showNotification, showTaskCompleted, showNextTask } = useNotifications(
     tasks,
@@ -113,6 +113,16 @@ export default function DayPlannerApp() {
 
   return (
     <>
+      {/* Sign-in Required Banner */}
+      {signInRequired && (
+        <div style={{ background: '#fffbe6', color: '#222', border: '1px solid #ffe58f', borderRadius: 8, padding: '1em 2em', margin: '1em auto', maxWidth: 400, textAlign: 'center' }}>
+          <span role="img" aria-label="lock">🔒</span> You must sign in with Google to use the planner.
+          <br />
+          <button onClick={signIn} style={{ marginTop: 12, padding: '0.7em 2em', fontSize: '1.1em', borderRadius: 8, background: '#4285F4', color: '#fff', border: 'none', cursor: 'pointer' }}>
+            Sign in with Google
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="bg-card border-b p-4">
         <div className="max-w-md mx-auto">

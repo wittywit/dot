@@ -16,6 +16,7 @@ interface GoogleAuthContextType {
   signIn: () => void;
   signOut: () => void;
   refresh: () => void;
+  signInRequired: boolean;
 }
 
 const GoogleAuthContext = createContext<GoogleAuthContextType | undefined>(undefined);
@@ -46,52 +47,74 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
   const [user, setUser] = useState<GoogleUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [signInRequired, setSignInRequired] = useState(false);
   const tokenClient = useRef<any>(null);
   const silentAuthTried = useRef(false);
+  const gisReady = useRef(false);
 
-  // Load GIS script
+  // Load GIS script and set ready flag
   useEffect(() => {
     loadGISScript(() => {
+      gisReady.current = true;
       setLoading(false);
     });
   }, []);
 
-  // Silent sign-in on mount if flag is set
-  useEffect(() => {
+  // Helper to initialize token client
+  const initTokenClient = () => {
     if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) return;
-    if (!tokenClient.current) {
-      tokenClient.current = window.google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: (tokenResponse: any) => {
-          if (tokenResponse && tokenResponse.access_token) {
-            setAccessToken(tokenResponse.access_token);
-            window.__dot_gcal_token = tokenResponse.access_token;
-            setIsSignedIn(true);
-            fetchUserInfo(tokenResponse.access_token);
-            window.dispatchEvent(new Event("dot-gcal-token-updated"));
-            localStorage.setItem("dot-gcal-signed-in", "1");
-          } else {
-            setIsSignedIn(false);
-            setAccessToken(null);
-            setUser(null);
-            window.__dot_gcal_token = undefined;
-            localStorage.removeItem("dot-gcal-signed-in");
-          }
-        },
-      });
+    tokenClient.current = window.google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: (tokenResponse: any) => {
+        if (tokenResponse && tokenResponse.access_token) {
+          setAccessToken(tokenResponse.access_token);
+          window.__dot_gcal_token = tokenResponse.access_token;
+          setIsSignedIn(true);
+          setSignInRequired(false);
+          fetchUserInfo(tokenResponse.access_token);
+          window.dispatchEvent(new Event("dot-gcal-token-updated"));
+          localStorage.setItem("dot-gcal-signed-in", "1");
+        } else {
+          setIsSignedIn(false);
+          setAccessToken(null);
+          setUser(null);
+          setSignInRequired(true);
+          window.__dot_gcal_token = undefined;
+          localStorage.removeItem("dot-gcal-signed-in");
+        }
+      },
+    });
+  };
+
+  // Robust silent sign-in: retry after GIS loads, and on every mount
+  useEffect(() => {
+    const trySilentAuth = () => {
+      if (!gisReady.current || !window.google || !window.google.accounts || !window.google.accounts.oauth2) {
+        setTimeout(trySilentAuth, 200); // Retry until GIS is ready
+        return;
+      }
+      if (!tokenClient.current) {
+        initTokenClient();
+      }
+      if (window.__dot_gcal_token) {
+        setAccessToken(window.__dot_gcal_token);
+        setIsSignedIn(true);
+        setSignInRequired(false);
+        fetchUserInfo(window.__dot_gcal_token);
+      } else if (!silentAuthTried.current && localStorage.getItem("dot-gcal-signed-in")) {
+        silentAuthTried.current = true;
+        tokenClient.current.requestAccessToken({ prompt: "none" });
+      } else {
+        setSignInRequired(true);
+      }
+    };
+    trySilentAuth();
+    // Also retry on GIS script load
+    if (gisReady.current) {
+      trySilentAuth();
     }
-    // Try to restore token from window if present
-    if (window.__dot_gcal_token) {
-      setAccessToken(window.__dot_gcal_token);
-      setIsSignedIn(true);
-      fetchUserInfo(window.__dot_gcal_token);
-    } else if (!silentAuthTried.current && localStorage.getItem("dot-gcal-signed-in")) {
-      // Try silent auth
-      silentAuthTried.current = true;
-      tokenClient.current.requestAccessToken({ prompt: "none" });
-    }
-  }, [window.google]);
+  }, []);
 
   const fetchUserInfo = async (token: string) => {
     try {
@@ -106,6 +129,9 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
   };
 
   const signIn = () => {
+    if (!tokenClient.current) {
+      initTokenClient();
+    }
     if (tokenClient.current) {
       tokenClient.current.requestAccessToken();
       localStorage.setItem("dot-gcal-signed-in", "1");
@@ -116,6 +142,7 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
     setIsSignedIn(false);
     setUser(null);
     setAccessToken(null);
+    setSignInRequired(true);
     window.__dot_gcal_token = undefined;
     localStorage.removeItem("dot-gcal-signed-in");
     if (window.google && window.google.accounts && window.google.accounts.id) {
@@ -137,11 +164,13 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
       if (window.__dot_gcal_token) {
         setAccessToken(window.__dot_gcal_token);
         setIsSignedIn(true);
+        setSignInRequired(false);
         fetchUserInfo(window.__dot_gcal_token);
       } else {
         setAccessToken(null);
         setIsSignedIn(false);
         setUser(null);
+        setSignInRequired(true);
       }
     };
     window.addEventListener("dot-gcal-token-updated", handler);
@@ -149,7 +178,7 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   return (
-    <GoogleAuthContext.Provider value={{ isSignedIn, user, loading, accessToken, signIn, signOut, refresh }}>
+    <GoogleAuthContext.Provider value={{ isSignedIn, user, loading, accessToken, signIn, signOut, refresh, signInRequired }}>
       {children}
     </GoogleAuthContext.Provider>
   );
