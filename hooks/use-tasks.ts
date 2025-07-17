@@ -52,22 +52,52 @@ export function useTasks() {
       if (data.items) {
         setTasks(
           data.items.map((event: any) => {
-            // Map all-day recurring events to 10am
-            let mapped = {
-              ...event,
+            // Extract start/end
+            let isAllDay = false;
+            let isScheduled = false;
+            let date = undefined;
+            let time = undefined;
+            let duration = undefined;
+            if (event.start?.dateTime) {
+              // Timed event
+              isScheduled = true;
+              isAllDay = false;
+              const startDateTime = new Date(event.start.dateTime);
+              const endDateTime = event.end?.dateTime ? new Date(event.end.dateTime) : null;
+              date = event.start.dateTime.split("T")[0];
+              time = event.start.dateTime.split("T")[1]?.slice(0,5); // HH:MM
+              if (endDateTime) {
+                duration = Math.round((endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60));
+              }
+            } else if (event.start?.date) {
+              // All-day event
+              isAllDay = true;
+              isScheduled = false;
+              date = event.start.date;
+              time = undefined;
+              duration = undefined;
+            }
+            // Recurring
+            let recurring = undefined;
+            if (event.recurrence && event.recurrence.length > 0) {
+              recurring = event.recurrence[0];
+            }
+            // Reminder (not supported in GCal API v3 directly, so leave undefined)
+            // Completed: not tracked in GCal, so default to false
+            return {
+              id: event.id,
               title: event.summary,
               note: event.description,
-              isAllDay: false,
+              date,
+              time,
+              duration,
+              isScheduled,
+              isAllDay,
+              completed: false,
+              recurring,
+              reminder: undefined,
+              raw: event, // for debugging
             };
-            if (event.recurrence && event.start && event.start.date && !event.start.dateTime) {
-              mapped = {
-                ...mapped,
-                start: { dateTime: event.start.date + "T10:00:00" },
-                end: { dateTime: event.end.date + "T11:00:00" },
-                isAllDay: true,
-              };
-            }
-            return mapped;
           })
         );
       }
