@@ -50,7 +50,8 @@ export function TaskForm({ selectedDate, selectedTime, onSubmit, onClose, daySta
     e.preventDefault()
     if (!title.trim()) return
 
-    const taskData = {
+    // Always send isAllDay and date for unscheduled tasks
+    let taskData: any = {
       title: title.trim(),
       note: note.trim(),
       reminder,
@@ -58,11 +59,22 @@ export function TaskForm({ selectedDate, selectedTime, onSubmit, onClose, daySta
     }
 
     if (isScheduled) {
+      // Scheduled: send isAllDay: false, date, dateTime
+      const dateTimeISO = `${actualTaskDate}T${time}:00`;
       Object.assign(taskData, {
+        isAllDay: false,
         date: actualTaskDate,
-        time,
+        dateTime: dateTimeISO,
+        endDateTime: undefined, // Optionally calculate end time
         duration,
         recurring: recurring !== "none" ? { type: recurring } : undefined,
+      })
+    } else {
+      // Unscheduled: treat as all-day event for Google Calendar
+      const today = new Date().toISOString().split("T")[0];
+      Object.assign(taskData, {
+        isAllDay: true,
+        date: today,
       })
     }
 
