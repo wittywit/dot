@@ -86,6 +86,7 @@ export function useTasks() {
     }
     // Determine if this is an all-day event (robust)
     let start, end;
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if (taskData.isAllDay && taskData.date) {
       // All-day event: use date only, end is next day
       const startDate = taskData.date;
@@ -94,9 +95,9 @@ export function useTasks() {
       start = { date: startDate };
       end = { date: endDate.toISOString().split('T')[0] };
     } else if (taskData.dateTime) {
-      // Timed event: use dateTime only
-      start = { dateTime: taskData.dateTime };
-      end = { dateTime: taskData.endDateTime || taskData.dateTime };
+      // Timed event: use dateTime and timeZone
+      start = { dateTime: taskData.dateTime, timeZone };
+      end = { dateTime: taskData.endDateTime || taskData.dateTime, timeZone };
     } else {
       alert('Task is missing required date or time information.');
       return;
@@ -194,13 +195,23 @@ export function useTasks() {
     const queue = getOfflineQueue();
     for (const item of queue) {
       if (item.type === "add") {
+        // Patch: ensure timeZone is present for timed events in offline queue
+        let event = item.event;
+        if (event.start && event.start.dateTime && !event.start.timeZone) {
+          const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          event = {
+            ...event,
+            start: { ...event.start, timeZone },
+            end: { ...event.end, timeZone },
+          };
+        }
         await fetch(CALENDAR_API_URL, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(item.event),
+          body: JSON.stringify(event),
         });
       } else if (item.type === "update") {
         await fetch(`${CALENDAR_API_URL}/${item.id}`, {
