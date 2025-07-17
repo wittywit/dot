@@ -1,3 +1,5 @@
+"use client";
+
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 
 interface GoogleUser {
@@ -30,6 +32,13 @@ function loadGISScript(cb: () => void) {
   script.id = "google-identity-services";
   script.onload = cb;
   document.body.appendChild(script);
+}
+
+declare global {
+  interface Window {
+    google?: any;
+    __dot_gcal_token?: string;
+  }
 }
 
 export function GoogleAuthProvider({ children }: { children: React.ReactNode }) {
