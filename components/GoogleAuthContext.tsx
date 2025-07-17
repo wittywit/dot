@@ -31,7 +31,10 @@ function loadGISScript(cb: () => void) {
   script.async = true;
   script.defer = true;
   script.id = "google-identity-services";
-  script.onload = cb;
+  script.onload = () => {
+    console.log("[GoogleAuth] GIS script loaded");
+    cb();
+  };
   document.body.appendChild(script);
 }
 
@@ -54,19 +57,30 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
 
   // Load GIS script and set ready flag
   useEffect(() => {
+    console.log("[GoogleAuth] Loading GIS script...");
     loadGISScript(() => {
       gisReady.current = true;
       setLoading(false);
+      console.log("[GoogleAuth] GIS script ready");
     });
   }, []);
 
   // Helper to initialize token client
   const initTokenClient = () => {
-    if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) return;
+    if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
+      console.warn("[GoogleAuth] GIS not ready, cannot init token client");
+      return;
+    }
+    if (tokenClient.current) {
+      console.log("[GoogleAuth] Token client already initialized");
+      return;
+    }
+    console.log("[GoogleAuth] Initializing token client...");
     tokenClient.current = window.google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
       callback: (tokenResponse: any) => {
+        console.log("[GoogleAuth] Token client callback", tokenResponse);
         if (tokenResponse && tokenResponse.access_token) {
           setAccessToken(tokenResponse.access_token);
           window.__dot_gcal_token = tokenResponse.access_token;
@@ -82,15 +96,18 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
           setSignInRequired(true);
           window.__dot_gcal_token = undefined;
           localStorage.removeItem("dot-gcal-signed-in");
+          console.warn("[GoogleAuth] No access token in response");
         }
       },
     });
+    console.log("[GoogleAuth] Token client initialized");
   };
 
   // Robust silent sign-in: retry after GIS loads, and on every mount
   useEffect(() => {
     const trySilentAuth = () => {
       if (!gisReady.current || !window.google || !window.google.accounts || !window.google.accounts.oauth2) {
+        console.log("[GoogleAuth] GIS not ready, retrying silent auth...");
         setTimeout(trySilentAuth, 200); // Retry until GIS is ready
         return;
       }
@@ -102,11 +119,18 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
         setIsSignedIn(true);
         setSignInRequired(false);
         fetchUserInfo(window.__dot_gcal_token);
+        console.log("[GoogleAuth] Restored token from window");
       } else if (!silentAuthTried.current && localStorage.getItem("dot-gcal-signed-in")) {
         silentAuthTried.current = true;
-        tokenClient.current.requestAccessToken({ prompt: "none" });
+        if (tokenClient.current) {
+          console.log("[GoogleAuth] Attempting silent sign-in (prompt: none)...");
+          tokenClient.current.requestAccessToken({ prompt: "none" });
+        } else {
+          console.warn("[GoogleAuth] Token client not ready for silent sign-in");
+        }
       } else {
         setSignInRequired(true);
+        console.log("[GoogleAuth] No token found, sign-in required");
       }
     };
     trySilentAuth();
@@ -123,18 +147,29 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
       });
       const data = await res.json();
       setUser({ name: data.name, email: data.email, imageUrl: data.picture });
+      console.log("[GoogleAuth] User info fetched", data);
     } catch (e) {
       setUser(null);
+      console.error("[GoogleAuth] Failed to fetch user info", e);
     }
   };
 
   const signIn = () => {
+    if (!gisReady.current) {
+      alert("Google sign-in is not ready yet. Please wait a moment and try again.");
+      console.warn("[GoogleAuth] GIS not ready, cannot sign in");
+      return;
+    }
     if (!tokenClient.current) {
       initTokenClient();
     }
     if (tokenClient.current) {
+      console.log("[GoogleAuth] Interactive sign-in (button click)");
       tokenClient.current.requestAccessToken();
       localStorage.setItem("dot-gcal-signed-in", "1");
+    } else {
+      alert("Google sign-in is not ready yet. Please wait a moment and try again.");
+      console.warn("[GoogleAuth] Token client not ready for sign-in");
     }
   };
 
@@ -149,12 +184,14 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
       window.google.accounts.id.disableAutoSelect();
     }
     window.dispatchEvent(new Event("dot-gcal-token-updated"));
+    console.log("[GoogleAuth] Signed out");
   };
 
   const refresh = () => {
     if (accessToken) {
       fetchUserInfo(accessToken);
       window.dispatchEvent(new Event("dot-gcal-token-updated"));
+      console.log("[GoogleAuth] Refreshed user info");
     }
   };
 
@@ -166,11 +203,13 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
         setIsSignedIn(true);
         setSignInRequired(false);
         fetchUserInfo(window.__dot_gcal_token);
+        console.log("[GoogleAuth] Token updated from another tab");
       } else {
         setAccessToken(null);
         setIsSignedIn(false);
         setUser(null);
         setSignInRequired(true);
+        console.log("[GoogleAuth] Token cleared from another tab");
       }
     };
     window.addEventListener("dot-gcal-token-updated", handler);
