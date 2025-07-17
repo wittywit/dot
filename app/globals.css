@@ -1,0 +1,402 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 45 100% 51%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --radius: 0.5rem;
+
+    /* Default accent color (yellow) */
+    --accent-color: 45 100% 51%;
+    --accent-color-hover: 45 100% 47%;
+    --accent-color-light: 45 100% 95%;
+    --accent-color-dark: 45 100% 8%;
+  }
+
+  .dark {
+    --background: 0 0% 8%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 45 100% 51%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 83.1%;
+  }
+
+  /* Accent color variants */
+  .accent-yellow {
+    --accent-color: 45 100% 51%;
+    --accent-color-hover: 45 100% 47%;
+    --accent-color-light: 45 100% 95%;
+    --accent-color-dark: 45 100% 8%;
+  }
+
+  .accent-blue {
+    --accent-color: 217 91% 60%;
+    --accent-color-hover: 217 91% 55%;
+    --accent-color-light: 217 91% 95%;
+    --accent-color-dark: 217 91% 8%;
+  }
+
+  .accent-green {
+    --accent-color: 142 76% 36%;
+    --accent-color-hover: 142 76% 32%;
+    --accent-color-light: 142 76% 95%;
+    --accent-color-dark: 142 76% 8%;
+  }
+
+  .accent-purple {
+    --accent-color: 262 83% 58%;
+    --accent-color-hover: 262 83% 54%;
+    --accent-color-light: 262 83% 95%;
+    --accent-color-dark: 262 83% 8%;
+  }
+
+  .accent-red {
+    --accent-color: 0 84% 60%;
+    --accent-color-hover: 0 84% 56%;
+    --accent-color-light: 0 84% 95%;
+    --accent-color-dark: 0 84% 8%;
+  }
+
+  .accent-orange {
+    --accent-color: 25 95% 53%;
+    --accent-color-hover: 25 95% 49%;
+    --accent-color-light: 25 95% 95%;
+    --accent-color-dark: 25 95% 8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+.task-completed {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* Dynamic accent color classes */
+.bg-accent-color {
+  background-color: hsl(var(--accent-color));
+}
+
+.bg-accent-color-hover:hover {
+  background-color: hsl(var(--accent-color-hover));
+}
+
+.text-accent-color {
+  color: hsl(var(--accent-color));
+}
+
+.border-accent-color {
+  border-color: hsl(var(--accent-color));
+}
+
+.bg-accent-color-light {
+  background-color: hsl(var(--accent-color-light));
+}
+
+.dark .bg-accent-color-light {
+  background-color: hsl(var(--accent-color-dark));
+}
+
+/* Subtle current task highlighting */
+.current-task {
+  background-color: hsl(var(--accent-color-light)) !important;
+  border-left: 4px solid hsl(var(--accent-color)) !important;
+  box-shadow: 0 1px 3px 0 hsla(var(--accent-color), 0.1) !important;
+}
+
+.dark .current-task {
+  background-color: hsl(var(--accent-color-dark)) !important;
+  border-left: 4px solid hsl(var(--accent-color)) !important;
+  box-shadow: 0 1px 3px 0 hsla(var(--accent-color), 0.15) !important;
+}
+
+/* Task highlighting variants */
+.task-highlight-today {
+  background-color: hsl(var(--accent-color-light));
+  border-left: 3px solid hsl(var(--accent-color));
+}
+
+.dark .task-highlight-today {
+  background-color: hsl(var(--accent-color-dark));
+  border-left: 3px solid hsl(var(--accent-color));
+}
+
+/* Hour slot styling */
+.hour-slot {
+  background-color: white;
+  border: 1px solid rgb(229 231 235);
+}
+
+.dark .hour-slot {
+  background-color: rgb(31 41 55);
+  border: 1px solid rgb(55 65 81);
+}
+
+.hour-slot.current-hour {
+  background-color: rgb(249 250 251);
+  border-left: 3px solid hsl(var(--accent-color));
+}
+
+.dark .hour-slot.current-hour {
+  background-color: rgb(55 65 81);
+  border-left: 3px solid hsl(var(--accent-color));
+}
+
+/* Improved font visibility */
+.hour-time {
+  color: rgb(17 24 39);
+  font-weight: 500;
+}
+
+.dark .hour-time {
+  color: rgb(243 244 246);
+  font-weight: 500;
+}
+
+.day-date {
+  color: rgb(17 24 39);
+  font-weight: 600;
+}
+
+.dark .day-date {
+  color: rgb(243 244 246);
+  font-weight: 600;
+}
+
+.greeting-text {
+  color: rgb(17 24 39);
+  font-weight: 700;
+}
+
+.dark .greeting-text {
+  color: rgb(243 244 246);
+  font-weight: 700;
+}
+
+/* Task time text styling - Better contrast */
+.task-time-text {
+  color: rgb(75 85 99);
+  font-weight: 500;
+}
+
+.dark .task-time-text {
+  color: rgb(209 213 219);
+  font-weight: 500;
+}
+
+/* Task note text styling - Better contrast */
+.task-note-text {
+  color: rgb(75 85 99);
+}
+
+.dark .task-note-text {
+  color: rgb(209 213 219);
+}
+
+/* Task details container */
+.task-details {
+  color: rgb(75 85 99);
+  font-weight: 500;
+}
+
+.dark .task-details {
+  color: rgb(209 213 219);
+  font-weight: 500;
+}
+
+/* Task card styling */
+.task-card {
+  background-color: white;
+  border: 1px solid rgb(229 231 235);
+  transition: all 0.2s ease;
+}
+
+.dark .task-card {
+  background-color: rgb(31 41 55);
+  border: 1px solid rgb(55 65 81);
+  color: rgb(243 244 246);
+}
+
+.task-card:hover {
+  background-color: rgb(249 250 251);
+  border-color: rgb(209 213 219);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.dark .task-card:hover {
+  background-color: rgb(55 65 81);
+  border-color: rgb(75 85 99);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Task list card styling */
+.task-list-card {
+  background-color: white;
+  border: 1px solid rgb(229 231 235);
+  transition: all 0.2s ease;
+}
+
+.dark .task-list-card {
+  background-color: rgb(31 41 55);
+  border: 1px solid rgb(55 65 81);
+  color: rgb(243 244 246);
+}
+
+.task-list-card:hover {
+  border-color: rgb(209 213 219);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.dark .task-list-card:hover {
+  border-color: rgb(75 85 99);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Form cards in dark mode */
+.form-card {
+  background-color: white;
+  border: 1px solid rgb(229 231 235);
+}
+
+.dark .form-card {
+  background-color: rgb(31 41 55);
+  border: 1px solid rgb(55 65 81);
+}
+
+/* Input labels in dark mode */
+.input-label {
+  color: rgb(17 24 39);
+  font-weight: 500;
+}
+
+.dark .input-label {
+  color: rgb(209 213 219);
+  font-weight: 500;
+}
+
+/* Placeholder text improvements */
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: rgb(156 163 175);
+}
+
+/* Task title in dark mode */
+.task-title {
+  color: rgb(17 24 39);
+  font-weight: 600;
+}
+
+.dark .task-title {
+  color: rgb(243 244 246);
+  font-weight: 600;
+}
+
+/* Weekly/Monthly view task highlighting */
+.task-mini-card {
+  background-color: hsl(var(--accent-color-light));
+  color: rgb(120 113 108);
+  border: 1px solid hsla(var(--accent-color), 0.3);
+}
+
+.dark .task-mini-card {
+  background-color: hsl(var(--accent-color-dark));
+  color: rgb(209 213 219);
+  border: 1px solid hsla(var(--accent-color), 0.2);
+}
+
+.task-mini-card.completed {
+  background-color: rgb(243 244 246);
+  color: rgb(107 114 128);
+  border: 1px solid rgb(209 213 219);
+}
+
+.dark .task-mini-card.completed {
+  background-color: rgb(55 65 81);
+  color: rgb(156 163 175);
+  border: 1px solid rgb(75 85 99);
+}
+
+/* View toggle buttons */
+.view-toggle-active {
+  background-color: hsl(var(--accent-color));
+  color: white;
+}
+
+.view-toggle-active:hover {
+  background-color: hsl(var(--accent-color-hover));
+}
+
+/* Settings menu improvements */
+.settings-card {
+  background-color: white;
+  border: 1px solid rgb(229 231 235);
+}
+
+.dark .settings-card {
+  background-color: rgb(31 41 55);
+  border: 1px solid rgb(55 65 81);
+}
+
+/* Color picker styles */
+.color-option {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.color-option:hover {
+  transform: scale(1.1);
+  border-color: rgb(156 163 175);
+}
+
+.color-option.selected {
+  border-color: rgb(17 24 39);
+  transform: scale(1.1);
+}
+
+.dark .color-option.selected {
+  border-color: rgb(243 244 246);
+}
