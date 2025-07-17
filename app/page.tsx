@@ -17,6 +17,7 @@ import { useNotifications } from "../hooks/use-notifications"
 import { useDarkMode } from "../hooks/use-dark-mode"
 import { useSettingsSync } from "../hooks/use-settings-sync"
 import type { Task } from "../types/task"
+import GoogleCalendarSync from "../components/GoogleCalendarSync"
 
 export default function DayPlannerApp() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
@@ -223,7 +224,8 @@ export default function DayPlannerApp() {
   }, [settings.accentColor])
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <GoogleCalendarSync />
       {/* Header */}
       <div className="bg-card border-b p-4">
         <div className="max-w-md mx-auto">
@@ -375,6 +377,6 @@ export default function DayPlannerApp() {
 
       {/* Stats Modal */}
       {showStats && <TaskStatsModal stats={stats} onClose={() => setShowStats(false)} />}
-    </div>
+    </>
   )
 }

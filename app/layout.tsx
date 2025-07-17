@@ -8,9 +8,9 @@ import ServiceWorkerRegister from "../components/ServiceWorkerRegister"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Day Planner",
+  title: "Dot: Day Planner",
   description: "A simple day planner with tasks and reminders",
-    generator: 'v0.dev'
+    generator: 'Studio Poetics'
 }
 
 export default function RootLayout({
@@ -20,6 +20,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script src="https://apis.google.com/js/api.js"></script>
+      </head>
       <body className={inter.className}>
         <InstallPrompt />
         <ServiceWorkerRegister />

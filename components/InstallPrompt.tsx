@@ -27,6 +27,15 @@ const InstallPrompt: React.FC = () => {
     // Handle iOS custom prompt
     if (isIOS()) {
       setShowIOSPrompt(true);
+      // Hide after 5 seconds
+      const timeout = setTimeout(() => setShowIOSPrompt(false), 5000);
+      // Hide on tap anywhere
+      const tapHandler = () => setShowIOSPrompt(false);
+      window.addEventListener("pointerdown", tapHandler);
+      return () => {
+        clearTimeout(timeout);
+        window.removeEventListener("pointerdown", tapHandler);
+      };
     }
 
     return () => {
