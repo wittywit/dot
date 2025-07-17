@@ -53,15 +53,21 @@ export function useTasks() {
         setTasks(
           data.items.map((event: any) => {
             // Map all-day recurring events to 10am
+            let mapped = {
+              ...event,
+              title: event.summary,
+              note: event.description,
+              isAllDay: false,
+            };
             if (event.recurrence && event.start && event.start.date && !event.start.dateTime) {
-              return {
-                ...event,
+              mapped = {
+                ...mapped,
                 start: { dateTime: event.start.date + "T10:00:00" },
                 end: { dateTime: event.end.date + "T11:00:00" },
                 isAllDay: true,
               };
             }
-            return { ...event, isAllDay: false };
+            return mapped;
           })
         );
       }
@@ -196,8 +202,9 @@ export function useTasks() {
     });
   };
 
+  // Show all tasks in the list view for now
   const getUnscheduledTasks = () => {
-    return tasks.filter((task) => !task.start?.dateTime);
+    return tasks;
   };
 
   return {
