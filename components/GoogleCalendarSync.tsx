@@ -23,6 +23,7 @@ declare global {
   interface Window {
     gapi: any;
     google: any;
+    __dot_gcal_token?: string; // Use 'string | undefined' everywhere
   }
 }
 
@@ -73,9 +74,12 @@ export default function GoogleCalendarSync({ onRefresh }: { onRefresh?: () => vo
         callback: (tokenResponse: any) => {
           if (tokenResponse && tokenResponse.access_token) {
             accessToken.current = tokenResponse.access_token;
+            window.__dot_gcal_token = tokenResponse.access_token; // Store globally for useTasks
             setIsSignedIn(true);
             setLoading(false);
             fetchUserInfo();
+            // Notify app to refresh tasks
+            window.dispatchEvent(new Event("dot-gcal-token-updated"));
             if (onRefresh) onRefresh();
           }
         },
@@ -117,6 +121,7 @@ export default function GoogleCalendarSync({ onRefresh }: { onRefresh?: () => vo
     setIsSignedIn(false);
     setUser(null);
     accessToken.current = null;
+    window.__dot_gcal_token = undefined; // Clear global token on sign out
     if (window.google && window.google.accounts && window.google.accounts.id) {
       window.google.accounts.id.disableAutoSelect();
     }

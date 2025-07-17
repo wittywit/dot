@@ -260,7 +260,7 @@ export function SettingsMenu({ onClose }: SettingsMenuProps) {
         {/* Account Section */}
         <div className="mt-8 pt-6 border-t">
           <h3 className="text-lg font-semibold mb-2">Account</h3>
-          <GoogleCalendarSync onRefresh={() => window.location.reload()} />
+          <GoogleCalendarSync onRefresh={() => {/* No reload here, rely on event */}} />
         </div>
       </div>
     </div>
