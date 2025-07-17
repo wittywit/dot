@@ -179,6 +179,15 @@ export function useTasks() {
     return () => window.removeEventListener("online", syncOfflineQueue);
   }, [syncOfflineQueue, fetchTasks]);
 
+  // Listen for Google token changes and refetch tasks
+  useEffect(() => {
+    const handler = () => {
+      fetchTasks();
+    };
+    window.addEventListener("dot-gcal-token-updated", handler);
+    return () => window.removeEventListener("dot-gcal-token-updated", handler);
+  }, [fetchTasks]);
+
   // Expose task helpers for planner views
   const getTasksForDate = (date: string) => {
     return tasks.filter((task) => {
