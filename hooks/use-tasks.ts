@@ -84,11 +84,23 @@ export function useTasks() {
       alert("You must be signed in to add a task. Please sign in with Google.");
       return;
     }
+    // Determine if this is an all-day event
+    let start, end;
+    if (taskData.isAllDay) {
+      // All-day event: use date only
+      start = { date: taskData.date };
+      // For true all-day, end should be the next day, but for now use same date
+      end = { date: taskData.date };
+    } else {
+      // Timed event: use dateTime
+      start = { dateTime: taskData.dateTime };
+      end = { dateTime: taskData.endDateTime || taskData.dateTime };
+    }
     const event = {
       summary: taskData.title,
       description: taskData.note || taskData.description || "",
-      start: { dateTime: taskData.dateTime },
-      end: { dateTime: taskData.endDateTime || taskData.dateTime },
+      start,
+      end,
       recurrence: taskData.recurrence ? [taskData.recurrence] : undefined,
     };
     // Log the event object for debugging
