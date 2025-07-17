@@ -80,29 +80,40 @@ export function useTasks() {
   // Add task (create event)
   const addTask = async (taskData: any) => {
     const token = getAccessToken();
+    if (!token) {
+      alert("You must be signed in to add a task. Please sign in with Google.");
+      return;
+    }
     const event = {
       summary: taskData.title,
-      description: taskData.description || "",
+      description: taskData.note || taskData.description || "",
       start: { dateTime: taskData.dateTime },
       end: { dateTime: taskData.endDateTime || taskData.dateTime },
       recurrence: taskData.recurrence ? [taskData.recurrence] : undefined,
     };
-    if (!token || !navigator.onLine) {
+    if (!navigator.onLine) {
       // Queue offline
       setOfflineQueue([...getOfflineQueue(), { type: "add", event }]);
       setTasks((prev) => [...prev, { ...event, id: `offline-${Date.now()}` }]);
       return;
     }
-    const res = await fetch(CALENDAR_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(event),
-    });
-    const data = await res.json();
-    setTasks((prev) => [...prev, data]);
+    try {
+      const res = await fetch(CALENDAR_API_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(event),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to add task to Google Calendar");
+      }
+      const data = await res.json();
+      setTasks((prev) => [...prev, data]);
+    } catch (err) {
+      alert("Failed to add task. Please check your sign-in and try again.");
+    }
   };
 
   // Update task (update event)

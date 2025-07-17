@@ -47,6 +47,7 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
   const [loading, setLoading] = useState(true);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const tokenClient = useRef<any>(null);
+  const silentAuthTried = useRef(false);
 
   // Load GIS script
   useEffect(() => {
@@ -55,7 +56,7 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
     });
   }, []);
 
-  // Initialize GIS token client
+  // Silent sign-in on mount if flag is set
   useEffect(() => {
     if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) return;
     if (!tokenClient.current) {
@@ -69,6 +70,13 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
             setIsSignedIn(true);
             fetchUserInfo(tokenResponse.access_token);
             window.dispatchEvent(new Event("dot-gcal-token-updated"));
+            localStorage.setItem("dot-gcal-signed-in", "1");
+          } else {
+            setIsSignedIn(false);
+            setAccessToken(null);
+            setUser(null);
+            window.__dot_gcal_token = undefined;
+            localStorage.removeItem("dot-gcal-signed-in");
           }
         },
       });
@@ -78,6 +86,10 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
       setAccessToken(window.__dot_gcal_token);
       setIsSignedIn(true);
       fetchUserInfo(window.__dot_gcal_token);
+    } else if (!silentAuthTried.current && localStorage.getItem("dot-gcal-signed-in")) {
+      // Try silent auth
+      silentAuthTried.current = true;
+      tokenClient.current.requestAccessToken({ prompt: "none" });
     }
   }, [window.google]);
 
@@ -96,6 +108,7 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
   const signIn = () => {
     if (tokenClient.current) {
       tokenClient.current.requestAccessToken();
+      localStorage.setItem("dot-gcal-signed-in", "1");
     }
   };
 
@@ -104,6 +117,7 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
     setUser(null);
     setAccessToken(null);
     window.__dot_gcal_token = undefined;
+    localStorage.removeItem("dot-gcal-signed-in");
     if (window.google && window.google.accounts && window.google.accounts.id) {
       window.google.accounts.id.disableAutoSelect();
     }
