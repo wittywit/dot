@@ -17,6 +17,7 @@ import { useNotifications } from "../hooks/use-notifications"
 import { useDarkMode } from "../hooks/use-dark-mode"
 import { useSettingsSync } from "../hooks/use-settings-sync"
 import type { Task } from "../types/task"
+import { useGoogleAuth } from "../components/GoogleAuthContext";
 
 export default function DayPlannerApp() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
@@ -29,6 +30,7 @@ export default function DayPlannerApp() {
   const { settings } = useSettings()
   const { isDarkMode } = useDarkMode()
   const stats = useTaskStats(tasks)
+  const { isSignedIn, user } = useGoogleAuth();
 
   const { requestPermission, showNotification, showTaskCompleted, showNextTask } = useNotifications(
     tasks,
@@ -128,8 +130,11 @@ export default function DayPlannerApp() {
 
           <div className="text-center mb-4">
             <h1 className="text-2xl font-bold mb-1 greeting-text">
-              {getGreeting()}, {settings.name}!
+              {getGreeting()}, {user && user.name ? user.name : settings.name}!
             </h1>
+            {user && user.imageUrl && (
+              <img src={user.imageUrl} alt={user.name} style={{ width: 36, height: 36, borderRadius: "50%", display: "inline-block", marginBottom: 4 }} />
+            )}
             <p className="text-muted-foreground">Make your day.</p>
           </div>
 

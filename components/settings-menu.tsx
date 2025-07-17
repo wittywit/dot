@@ -10,7 +10,7 @@ import { X, User, Clock, Bell, Moon, Palette, CheckCircle } from "lucide-react"
 import { useSettings } from "../hooks/use-settings"
 import { useNotifications } from "../hooks/use-notifications"
 import type { AccentColor } from "../types/task"
-import GoogleCalendarSync from "./GoogleCalendarSync"
+import { useGoogleAuth } from "./GoogleAuthContext";
 
 interface SettingsMenuProps {
   onClose: () => void
@@ -30,6 +30,7 @@ export function SettingsMenu({ onClose }: SettingsMenuProps) {
   const { requestPermission, showNotification } = useNotifications([], true)
   const [tempName, setTempName] = useState(settings.name)
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default")
+  const { isSignedIn, user, loading, signIn, signOut, refresh } = useGoogleAuth();
 
   const handleSave = () => {
     updateSettings({ name: tempName })
@@ -260,7 +261,35 @@ export function SettingsMenu({ onClose }: SettingsMenuProps) {
         {/* Account Section */}
         <div className="mt-8 pt-6 border-t">
           <h3 className="text-lg font-semibold mb-2">Account</h3>
-          <GoogleCalendarSync onRefresh={() => {/* No reload here, rely on event */}} />
+          <div style={{ textAlign: "center", padding: 12 }}>
+            {loading && <div>Loading Google Calendar integration...</div>}
+            {!loading && !isSignedIn && (
+              <button onClick={signIn} style={{ padding: "0.7em 2em", fontSize: "1.1em", borderRadius: 8, background: "#4285F4", color: "#fff", border: "none", cursor: "pointer" }}>
+                <span style={{ marginRight: 8, verticalAlign: "middle" }}>Sign in with Google</span>
+                <svg width="18" height="18" viewBox="0 0 48 48" style={{ verticalAlign: "middle" }}><g><path fill="#4285F4" d="M43.6 20.5H42V20H24v8h11.3C34.7 32.1 30.1 35 24 35c-6.1 0-11.3-4.1-13.1-9.6-0.4-1-0.6-2-0.6-3.1s0.2-2.1 0.6-3.1C12.7 15.1 17.9 11 24 11c3.1 0 6 1.1 8.2 2.9l6.2-6.2C34.5 4.5 29.5 2 24 2 12.9 2 4 10.9 4 22s8.9 20 20 20c11.1 0 20-8.9 20-20 0-1.3-0.1-2.7-0.4-4z"/><path fill="#34A853" d="M6.3 14.7l6.6 4.8C14.3 16.1 18.8 13 24 13c3.1 0 6 1.1 8.2 2.9l6.2-6.2C34.5 4.5 29.5 2 24 2 15.1 2 7.6 7.6 6.3 14.7z"/><path fill="#FBBC05" d="M24 44c5.5 0 10.5-2.1 14.3-5.7l-6.6-5.4C29.9 34.9 27.1 36 24 36c-6.1 0-11.3-4.1-13.1-9.6l-6.6 5.1C7.6 40.4 15.1 44 24 44z"/><path fill="#EA4335" d="M43.6 20.5H42V20H24v8h11.3c-1.1 3.1-4.1 5.5-7.3 5.5-4.1 0-7.5-3.4-7.5-7.5s3.4-7.5 7.5-7.5c1.7 0 3.2 0.6 4.4 1.6l6.2-6.2C34.5 4.5 29.5 2 24 2 12.9 2 4 10.9 4 22s8.9 20 20 20c11.1 0 20-8.9 20-20 0-1.3-0.1-2.7-0.4-4z"/></g></svg>
+              </button>
+            )}
+            {!loading && isSignedIn && user && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+                {user.imageUrl && <img src={user.imageUrl} alt={user.name} style={{ width: 32, height: 32, borderRadius: "50%" }} />}
+                <div style={{ textAlign: "left" }}>
+                  <div style={{ fontWeight: 600 }}>{user.name}</div>
+                  <div style={{ fontSize: "0.95em", color: "#555" }}>{user.email}</div>
+                  <div style={{ fontSize: "0.9em", color: "#388e3c", marginTop: 2 }}>Signed in with Google</div>
+                </div>
+              </div>
+            )}
+            {!loading && isSignedIn && (
+              <div style={{ marginTop: 12 }}>
+                <button onClick={signOut} style={{ marginRight: 8, padding: "0.5em 1.2em", fontSize: "1em", borderRadius: 8, background: "#eee", color: "#222", border: "none", cursor: "pointer" }}>
+                  Sign out
+                </button>
+                <button onClick={refresh} style={{ padding: "0.5em 1.2em", fontSize: "1em", borderRadius: 8, background: "#4285F4", color: "#fff", border: "none", cursor: "pointer" }}>
+                  Refresh Events
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
