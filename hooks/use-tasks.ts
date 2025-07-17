@@ -286,7 +286,8 @@ export function useTasks() {
   // Expose task helpers for planner views
   const getTasksForDate = (date: string) => {
     return tasks.filter((task) => {
-      const taskDate = task.start?.dateTime?.split("T")[0];
+      // Prefer mapped task.date, fallback to start.dateTime or start.date
+      const taskDate = task.date || task.start?.dateTime?.split("T")[0] || task.start?.date;
       return taskDate === date;
     });
   };
