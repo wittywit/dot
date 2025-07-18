@@ -103,6 +103,49 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
     console.log("[GoogleAuth] Token client initialized");
   };
 
+  // Listen for token updates from other tabs/windows
+  useEffect(() => {
+    const handler = () => {
+      if (window.__dot_gcal_token) {
+        setAccessToken(window.__dot_gcal_token);
+        setIsSignedIn(true);
+        setSignInRequired(false);
+        fetchUserInfo(window.__dot_gcal_token);
+        console.log("[GoogleAuth] Token updated from another tab");
+      } else {
+        setAccessToken(null);
+        setIsSignedIn(false);
+        setUser(null);
+        setSignInRequired(true);
+        console.log("[GoogleAuth] Token cleared from another tab");
+      }
+    };
+    window.addEventListener("dot-gcal-token-updated", handler);
+    // Listen for localStorage changes (cross-tab)
+    const storageHandler = (e: StorageEvent) => {
+      if (e.key === "dot-gcal-signed-in") {
+        if (e.newValue) {
+          // Try silent sign-in in this tab
+          if (tokenClient.current) {
+            tokenClient.current.requestAccessToken({ prompt: "none" });
+          }
+        } else {
+          // Signed out in another tab
+          setAccessToken(null);
+          setIsSignedIn(false);
+          setUser(null);
+          setSignInRequired(true);
+          window.__dot_gcal_token = undefined;
+        }
+      }
+    };
+    window.addEventListener("storage", storageHandler);
+    return () => {
+      window.removeEventListener("dot-gcal-token-updated", handler);
+      window.removeEventListener("storage", storageHandler);
+    };
+  }, []);
+
   // Robust silent sign-in: retry after GIS loads, and on every mount
   useEffect(() => {
     const trySilentAuth = () => {
@@ -154,6 +197,7 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
     }
   };
 
+  // When signing in or out, update localStorage and broadcast to other tabs
   const signIn = () => {
     if (!gisReady.current) {
       alert("Google sign-in is not ready yet. Please wait a moment and try again.");
@@ -167,6 +211,7 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
       console.log("[GoogleAuth] Interactive sign-in (button click)");
       tokenClient.current.requestAccessToken();
       localStorage.setItem("dot-gcal-signed-in", "1");
+      window.dispatchEvent(new Event("storage")); // Broadcast to other tabs
     } else {
       alert("Google sign-in is not ready yet. Please wait a moment and try again.");
       console.warn("[GoogleAuth] Token client not ready for sign-in");
@@ -184,6 +229,7 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
       window.google.accounts.id.disableAutoSelect();
     }
     window.dispatchEvent(new Event("dot-gcal-token-updated"));
+    window.dispatchEvent(new Event("storage")); // Broadcast to other tabs
     console.log("[GoogleAuth] Signed out");
   };
 
@@ -194,27 +240,6 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
       console.log("[GoogleAuth] Refreshed user info");
     }
   };
-
-  // Listen for token updates from other tabs/windows
-  useEffect(() => {
-    const handler = () => {
-      if (window.__dot_gcal_token) {
-        setAccessToken(window.__dot_gcal_token);
-        setIsSignedIn(true);
-        setSignInRequired(false);
-        fetchUserInfo(window.__dot_gcal_token);
-        console.log("[GoogleAuth] Token updated from another tab");
-      } else {
-        setAccessToken(null);
-        setIsSignedIn(false);
-        setUser(null);
-        setSignInRequired(true);
-        console.log("[GoogleAuth] Token cleared from another tab");
-      }
-    };
-    window.addEventListener("dot-gcal-token-updated", handler);
-    return () => window.removeEventListener("dot-gcal-token-updated", handler);
-  }, []);
 
   return (
     <GoogleAuthContext.Provider value={{ isSignedIn, user, loading, accessToken, signIn, signOut, refresh, signInRequired }}>
