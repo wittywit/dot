@@ -54,6 +54,8 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
   const tokenClient = useRef<any>(null);
   const silentAuthTried = useRef(false);
   const gisReady = useRef(false);
+  // Add One Tap state
+  const oneTapPrompted = useRef(false);
 
   // Load GIS script and set ready flag
   useEffect(() => {
@@ -103,6 +105,29 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
     console.log("[GoogleAuth] Token client initialized");
   };
 
+  // Helper to initialize One Tap
+  const initOneTap = () => {
+    if (!window.google || !window.google.accounts || !window.google.accounts.id) return;
+    if (oneTapPrompted.current) return;
+    oneTapPrompted.current = true;
+    window.google.accounts.id.initialize({
+      client_id: CLIENT_ID,
+      callback: (response: any) => {
+        // Exchange credential for access token
+        // Use GIS token client to request access token interactively
+        if (!tokenClient.current) initTokenClient();
+        if (tokenClient.current) {
+          tokenClient.current.requestAccessToken();
+        }
+      },
+      auto_select: false,
+      cancel_on_tap_outside: true,
+      context: 'signin',
+    });
+    window.google.accounts.id.prompt();
+    console.log("[GoogleAuth] One Tap prompted");
+  };
+
   // Listen for token updates from other tabs/windows
   useEffect(() => {
     const handler = () => {
@@ -146,12 +171,11 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
     };
   }, []);
 
-  // Robust silent sign-in: retry after GIS loads, and on every mount
+  // Try silent sign-in on load and on focus
   useEffect(() => {
     const trySilentAuth = () => {
       if (!gisReady.current || !window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-        console.log("[GoogleAuth] GIS not ready, retrying silent auth...");
-        setTimeout(trySilentAuth, 200); // Retry until GIS is ready
+        setTimeout(trySilentAuth, 200);
         return;
       }
       if (!tokenClient.current) {
@@ -168,11 +192,13 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
         if (tokenClient.current) {
           console.log("[GoogleAuth] Attempting silent sign-in (prompt: none)...");
           tokenClient.current.requestAccessToken({ prompt: "none" });
-        } else {
-          console.warn("[GoogleAuth] Token client not ready for silent sign-in");
         }
       } else {
         setSignInRequired(true);
+        // Show One Tap if not signed in
+        if (window.google && window.google.accounts && window.google.accounts.id) {
+          initOneTap();
+        }
         console.log("[GoogleAuth] No token found, sign-in required");
       }
     };
@@ -181,6 +207,14 @@ export function GoogleAuthProvider({ children }: { children: React.ReactNode }) 
     if (gisReady.current) {
       trySilentAuth();
     }
+    // Try silent sign-in on window focus
+    const onFocus = () => {
+      trySilentAuth();
+    };
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   const fetchUserInfo = async (token: string) => {
