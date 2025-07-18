@@ -66,13 +66,17 @@ export function TaskForm({ selectedDate, selectedTime, onSubmit, onClose, daySta
       const startDateObj = new Date(`${actualTaskDate}T${time}:00`);
       const endDateObj = new Date(startDateObj.getTime() + duration * 60000);
       const endDateTimeISO = endDateObj.toISOString().slice(0,16);
+      let recurrence = undefined;
+      if (recurring === "daily") recurrence = "RRULE:FREQ=DAILY";
+      else if (recurring === "weekly") recurrence = "RRULE:FREQ=WEEKLY";
+      else if (recurring === "monthly") recurrence = "RRULE:FREQ=MONTHLY";
       Object.assign(taskData, {
         isAllDay: false,
         date: actualTaskDate,
         dateTime: dateTimeISO,
         endDateTime: endDateTimeISO,
         duration,
-        recurring: recurring !== "none" ? { type: recurring } : undefined,
+        recurrence,
       })
     } else {
       // Unscheduled: treat as all-day event for Google Calendar
