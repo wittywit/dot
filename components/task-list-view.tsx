@@ -140,18 +140,15 @@ export function TaskListView({ tasks, onTaskClick, onAddTask, onScheduleTask, on
             <p>No tasks yet. Add your first task above!</p>
           </div>
         ) : (
-          tasks.map((task) => (
-            <div key={task.id} className={`task-list-card rounded-lg p-3 ${task.completed ? "opacity-60" : ""}`}>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div
-                    onClick={() => onTaskClick(task)}
-                    className={`cursor-pointer ${task.completed ? "line-through" : ""}`}
-                  >
-                    <h3 className="font-medium task-title">{task.title}</h3>
-                    {task.note && <p className="task-note-text text-sm mt-1">{task.note}</p>}
-                  </div>
-                </div>
+          <ul className="divide-y divide-muted">
+            {tasks.map((task) => (
+              <li key={task.id} className="flex items-center gap-3 py-2 group cursor-pointer" onClick={() => onTaskClick(task)}>
+                {/* Visual indicator for local-only vs. synced */}
+                {(task as any).localOnly ? (
+                  <span title="Local task" className="text-gray-400"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3v18m9-9H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg></span>
+                ) : (
+                  <span title="Synced to Google Calendar" className="text-blue-500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M17 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h10zm-5 4v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg></span>
+                )}
                 <div className="flex items-center gap-1 ml-2">
                   <Button variant="ghost" size="sm" onClick={() => setSchedulingTask(task.id)} className="h-8 w-8 p-0">
                     <Calendar className="h-3 w-3" />
@@ -165,9 +162,10 @@ export function TaskListView({ tasks, onTaskClick, onAddTask, onScheduleTask, on
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
-              </div>
-            </div>
-          ))
+                <span className={task.completed ? "line-through text-muted-foreground" : ""}>{task.title}</span>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </div>

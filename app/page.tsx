@@ -23,7 +23,7 @@ export default function DayPlannerApp() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
   const [showTaskForm, setShowTaskForm] = useState(false)
   const [selectedTime, setSelectedTime] = useState<string>()
-  const { tasks, addTask, updateTask, deleteTask, getTasksForDate, getUnscheduledTasks, loading } = useTasks()
+  const { tasks, addTask, updateTask, deleteTask, getTasksForDate, getUnscheduledTasks, loading, syncLocalTasks } = useTasks()
   const [view, setView] = useState<"day" | "week" | "month" | "list">("day")
   const [showSettings, setShowSettings] = useState(false)
   const [showStats, setShowStats] = useState(false)
@@ -42,6 +42,7 @@ export default function DayPlannerApp() {
   // Get tasks for the selected date
   const todayTasks = getTasksForDate(selectedDate)
   const unscheduledTasks = getUnscheduledTasks()
+  const localOnlyCount = tasks.filter((t: any) => t.localOnly).length;
 
   const handleTimeSlotClick = (time: string) => {
     setSelectedTime(time)
@@ -270,7 +271,7 @@ export default function DayPlannerApp() {
           )}
 
           {/* Settings Modal */}
-          {showSettings && <SettingsMenu onClose={() => setShowSettings(false)} />}
+          {showSettings && <SettingsMenu onClose={() => setShowSettings(false)} localOnlyCount={localOnlyCount} onSyncLocalTasks={syncLocalTasks} />}
 
           {/* Stats Modal */}
           {showStats && <TaskStatsModal stats={stats} onClose={() => setShowStats(false)} />}

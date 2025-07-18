@@ -387,6 +387,32 @@ export function useTasks() {
     });
   };
 
+  // Sync all local-only tasks to Google Calendar
+  const syncLocalTasks = async () => {
+    const token = getAccessToken();
+    if (!token) return;
+    // Get all local-only tasks
+    const localTasks = tasks.filter((t: any) => t.localOnly);
+    // Get all Google Calendar tasks (not localOnly)
+    const gcalTasks = tasks.filter((t: any) => !t.localOnly);
+    for (const localTask of localTasks) {
+      // Deduplication: check for existing task with same title and date/time
+      const isDuplicate = gcalTasks.some((g: any) =>
+        g.title === localTask.title &&
+        ((g.dateTime && localTask.dateTime && g.dateTime === localTask.dateTime) ||
+         (g.date && localTask.date && g.date === localTask.date))
+      );
+      if (!isDuplicate) {
+        // Add to Google Calendar
+        await addTask({ ...localTask, localOnly: false });
+      }
+    }
+    // Remove localOnly flag from synced tasks
+    setTasks((prev: any[]) => prev.map((t: any) => t.localOnly ? { ...t, localOnly: false } : t));
+    saveLocalListTasks(tasks.filter((t: any) => t.localOnly));
+    fetchTasks();
+  };
+
   return {
     tasks,
     loading,
@@ -397,5 +423,6 @@ export function useTasks() {
     getUnscheduledTasks,
     fetchTasks,
     syncOfflineQueue,
+    syncLocalTasks, // expose
   };
 }
