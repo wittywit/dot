@@ -140,13 +140,28 @@ export function useTasks() {
       alert('Task is missing required date or time information.');
       return;
     }
-    const event = {
+    // Clean event object: remove undefined/null fields
+    function clean(obj: any) {
+      if (Array.isArray(obj)) {
+        return obj.filter((v) => v !== undefined && v !== null)
+      } else if (typeof obj === 'object' && obj !== null) {
+        const newObj: any = {}
+        for (const k in obj) {
+          if (obj[k] !== undefined && obj[k] !== null) {
+            newObj[k] = clean(obj[k])
+          }
+        }
+        return newObj
+      }
+      return obj
+    }
+    const event = clean({
       summary: taskData.title,
       description: taskData.note || taskData.description || "",
       start,
       end,
       recurrence: taskData.recurrence ? [taskData.recurrence] : undefined,
-    };
+    });
     // Log the event object for debugging
     console.log("[addTask] Event object to send:", event);
     if (!navigator.onLine) {
