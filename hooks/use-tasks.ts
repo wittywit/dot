@@ -114,8 +114,7 @@ export function useTasks() {
             if (event.recurrence && event.recurrence.length > 0) {
               recurring = event.recurrence[0];
             }
-            // Reminder (not supported in GCal API v3 directly, so leave undefined)
-            // Completed: not tracked in GCal, so default to false
+            // Completed: always merge from completedMap
             return {
               id: event.id,
               title: event.summary,
