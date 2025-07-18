@@ -49,7 +49,7 @@ export default function DayPlannerApp() {
   }
 
   const handleTaskClick = (task: any) => {
-    // Optionally, implement toggle/complete logic with updateTask
+    updateTask(task.id, { completed: !task.completed })
   }
 
   const handleTaskCompleted = (completedTask: any) => {

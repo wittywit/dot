@@ -160,7 +160,7 @@ export function useTasks() {
       description: taskData.note || taskData.description || "",
       start,
       end,
-      recurrence: taskData.recurrence ? [taskData.recurrence] : undefined,
+      recurrence: (typeof taskData.recurrence === 'string' && taskData.recurrence.length > 0) ? [taskData.recurrence] : undefined,
     });
     // Log the event object for debugging
     console.log("[addTask] Event object to send:", event);
