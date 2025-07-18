@@ -34,6 +34,7 @@ function setOfflineQueue(queue: any[]) {
 
 // Local-only tasks persistence
 const LOCAL_LIST_KEY = "dot-local-list-tasks";
+const LOCAL_COMPLETED_KEY = "dot-completed-tasks";
 function loadLocalListTasks() {
   try {
     return JSON.parse(localStorage.getItem(LOCAL_LIST_KEY) || "[]");
@@ -44,11 +45,24 @@ function loadLocalListTasks() {
 function saveLocalListTasks(tasks: any[]) {
   localStorage.setItem(LOCAL_LIST_KEY, JSON.stringify(tasks));
 }
+function loadCompletedMap() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_COMPLETED_KEY) || "{}") || {};
+  } catch {
+    return {};
+  }
+}
+function saveCompletedMap(map: Record<string, boolean>) {
+  localStorage.setItem(LOCAL_COMPLETED_KEY, JSON.stringify(map));
+}
 
 export function useTasks() {
-  const [tasks, setTasks] = useState<any[]>(() => [
-    ...loadLocalListTasks(),
-  ]);
+  const [tasks, setTasks] = useState<any[]>(() => {
+    const locals = loadLocalListTasks();
+    const completedMap = loadCompletedMap();
+    // Merge completed state for local and Google tasks
+    return locals.map((t: any) => ({ ...t, completed: completedMap[t.id] ?? t.completed ?? false }));
+  });
   const [loading, setLoading] = useState(true);
 
   // Fetch events from Google Calendar
@@ -65,8 +79,11 @@ export function useTasks() {
       );
       const data = await res.json();
       if (data.items) {
-        setTasks(
-          data.items.map((event: any) => {
+        const completedMap = loadCompletedMap();
+        setTasks((prev: any[]) => {
+          // Keep local-only tasks
+          const localTasks = prev.filter((t: any) => t.localOnly);
+          const gcalTasks = data.items.map((event: any) => {
             // Extract start/end
             let isAllDay = false;
             let isScheduled = false;
@@ -108,13 +125,14 @@ export function useTasks() {
               duration,
               isScheduled,
               isAllDay,
-              completed: false,
+              completed: completedMap[event.id] ?? false,
               recurring,
               reminder: undefined,
               raw: event, // for debugging
             };
-          })
-        );
+          });
+          return [...localTasks, ...gcalTasks];
+        });
       }
     } catch (e) {
       // If offline, keep current tasks
@@ -236,6 +254,12 @@ export function useTasks() {
 
   // Update task (update event)
   const updateTask = async (id: string, updates: any) => {
+    // Update completed state in localStorage
+    if (updates.completed !== undefined) {
+      const completedMap = loadCompletedMap();
+      completedMap[id] = updates.completed;
+      saveCompletedMap(completedMap);
+    }
     const token = getAccessToken();
     if (!token || !navigator.onLine) {
       setOfflineQueue([...getOfflineQueue(), { type: "update", id, updates }]);
@@ -321,19 +345,19 @@ export function useTasks() {
     }
     // Listen for online event
     window.addEventListener("online", syncOfflineQueue);
-    // Load local-only tasks on mount
-    setTasks((prev: any[]) => {
-      const locals: any[] = loadLocalListTasks();
-      // Avoid duplicates
-      const ids = new Set(prev.map((t: any) => t.id));
-      return [...prev, ...locals.filter((t: any) => !ids.has(t.id))];
-    });
     return () => window.removeEventListener("online", syncOfflineQueue);
   }, [syncOfflineQueue, fetchTasks]);
 
-  // When local-only tasks change, persist them
+  // When local-only tasks or completed state change, persist them
   useEffect(() => {
     saveLocalListTasks(tasks.filter((t: any) => t.localOnly));
+    // Save completed state for all tasks
+    const completedMap: Record<string, boolean> = {};
+    for (const t of tasks as any[]) {
+      if (t.completed) completedMap[t.id] = true;
+      else delete completedMap[t.id];
+    }
+    saveCompletedMap(completedMap);
   }, [tasks]);
 
   // Listen for Google token changes and refetch tasks
