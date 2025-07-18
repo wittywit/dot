@@ -59,13 +59,18 @@ export function TaskForm({ selectedDate, selectedTime, onSubmit, onClose, daySta
     }
 
     if (isScheduled) {
-      // Scheduled: send isAllDay: false, date, dateTime
+      // Scheduled: send isAllDay: false, date, dateTime, and endDateTime
       const dateTimeISO = `${actualTaskDate}T${time}:00`;
+      // Calculate end time
+      const [hour, minute] = time.split(":").map(Number);
+      const startDateObj = new Date(`${actualTaskDate}T${time}:00`);
+      const endDateObj = new Date(startDateObj.getTime() + duration * 60000);
+      const endDateTimeISO = endDateObj.toISOString().slice(0,16);
       Object.assign(taskData, {
         isAllDay: false,
         date: actualTaskDate,
         dateTime: dateTimeISO,
-        endDateTime: undefined, // Optionally calculate end time
+        endDateTime: endDateTimeISO,
         duration,
         recurring: recurring !== "none" ? { type: recurring } : undefined,
       })

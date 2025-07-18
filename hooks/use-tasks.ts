@@ -170,6 +170,8 @@ export function useTasks() {
       }
       const data = await res.json();
       setTasks((prev) => [...prev, data]);
+      // Immediately fetch tasks from Google Calendar to sync
+      fetchTasks();
     } catch (err) {
       console.error("[addTask] Exception:", err);
       let msg = "";
