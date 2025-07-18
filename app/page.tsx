@@ -113,17 +113,11 @@ export default function DayPlannerApp() {
 
   return (
     <>
-      {/* Sign-in Required Overlay */}
-      {signInRequired && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-          <div className="bg-card border rounded-2xl shadow-2xl p-8 max-w-xs w-full flex flex-col items-center text-center gap-6">
-            <svg width="48" height="48" viewBox="0 0 48 48" className="mb-2"><circle cx="24" cy="24" r="24" fill="#F5F5F5"/><path d="M24 14a6 6 0 0 1 6 6v2h-2v-2a4 4 0 0 0-8 0v2h-2v-2a6 6 0 0 1 6-6zm-8 10h16a2 2 0 0 1 2 2v8a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4v-8a2 2 0 0 1 2-2zm0 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-8H16z" fill="#222"/></svg>
-            <h2 className="text-2xl font-bold mb-1">Sign in to continue</h2>
-            <Button onClick={signIn} className="w-full bg-accent-color hover:bg-accent-color-hover text-white text-lg py-3 rounded-xl shadow-md">
-              <svg width="20" height="20" viewBox="0 0 48 48" className="inline-block mr-2 align-middle"><g><path fill="#4285F4" d="M43.6 20.5H42V20H24v8h11.3C34.7 32.1 30.1 35 24 35c-6.1 0-11.3-4.1-13.1-9.6-0.4-1-0.6-2-0.6-3.1s0.2-2.1 0.6-3.1C12.7 15.1 17.9 11 24 11c3.1 0 6 1.1 8.2 2.9l6.2-6.2C34.5 4.5 29.5 2 24 2 15.1 2 7.6 7.6 6.3 14.7z"/><path fill="#34A853" d="M6.3 14.7l6.6 4.8C14.3 16.1 18.8 13 24 13c3.1 0 6 1.1 8.2 2.9l6.2-6.2C34.5 4.5 29.5 2 24 2 15.1 2 7.6 7.6 6.3 14.7z"/><path fill="#FBBC05" d="M24 44c5.5 0 10.5-2.1 14.3-5.7l-6.6-5.4C29.9 34.9 27.1 36 24 36c-6.1 0-11.3-4.1-13.1-9.6l-6.6 5.1C7.6 40.4 15.1 44 24 44z"/><path fill="#EA4335" d="M43.6 20.5H42V20H24v8h11.3c-1.1 3.1-4.1 5.5-7.3 5.5-4.1 0-7.5-3.4-7.5-7.5s3.4-7.5 7.5-7.5c1.7 0 3.2 0.6 4.4 1.6l6.2-6.2C34.5 4.5 29.5 2 24 2 15.1 2 7.6 7.6 6.3 14.7z"/></g></svg>
-              Sign in with Google
-            </Button>
-          </div>
+      {/* Remove sign-in required overlay. Instead, show a non-blocking banner if not signed in. */}
+      {!isSignedIn && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-accent-color text-white px-6 py-2 rounded-full shadow-lg flex items-center gap-3">
+          <span>Sign in to sync with Google Calendar</span>
+          <Button onClick={signIn} className="bg-white text-accent-color hover:bg-gray-100 rounded-full px-4 py-1 text-base font-semibold">Sign in</Button>
         </div>
       )}
       {/* Hide rest of UI if sign-in required */}
