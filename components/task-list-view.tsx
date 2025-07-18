@@ -163,6 +163,9 @@ export function TaskListView({ tasks, onTaskClick, onAddTask, onScheduleTask, on
                   </Button>
                 </div>
                 <span className={task.completed ? "line-through text-muted-foreground" : ""}>{task.title}</span>
+                {task.note && (
+                  <span className="block text-xs text-muted-foreground mt-0.5 ml-1">{task.note}</span>
+                )}
               </li>
             ))}
           </ul>
