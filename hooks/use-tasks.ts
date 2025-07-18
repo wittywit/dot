@@ -32,8 +32,23 @@ function setOfflineQueue(queue: any[]) {
   localStorage.setItem("dot-offline-queue", JSON.stringify(queue));
 }
 
+// Local-only tasks persistence
+const LOCAL_LIST_KEY = "dot-local-list-tasks";
+function loadLocalListTasks() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_LIST_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+function saveLocalListTasks(tasks: any[]) {
+  localStorage.setItem(LOCAL_LIST_KEY, JSON.stringify(tasks));
+}
+
 export function useTasks() {
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>(() => [
+    ...loadLocalListTasks(),
+  ]);
   const [loading, setLoading] = useState(true);
 
   // Fetch events from Google Calendar
@@ -109,13 +124,15 @@ export function useTasks() {
 
   // Add task (create event)
   const addTask = async (taskData: any) => {
-    // If localOnly, just add to local state
+    // If localOnly, just add to local state and persist
     if (taskData.localOnly) {
-      setTasks((prev) => [
-        ...prev,
-        { ...taskData, id: `local-${Date.now()}` },
-      ])
-      return
+      const newTask = { ...taskData, id: `local-${Date.now()}` };
+      setTasks((prev) => {
+        const updated = [...prev, newTask];
+        saveLocalListTasks(updated.filter(t => t.localOnly));
+        return updated;
+      });
+      return;
     }
     const token = getAccessToken();
     if (!token) {
@@ -134,8 +151,15 @@ export function useTasks() {
       end = { date: endDate.toISOString().split('T')[0] };
     } else if (taskData.dateTime) {
       // Timed event: use dateTime and timeZone
-      start = { dateTime: taskData.dateTime, timeZone };
-      end = { dateTime: taskData.endDateTime || taskData.dateTime, timeZone };
+      let startDT = taskData.dateTime;
+      let endDT = taskData.endDateTime || taskData.dateTime;
+      // Ensure end is after start
+      if (new Date(endDT) <= new Date(startDT)) {
+        const newEnd = new Date(new Date(startDT).getTime() + 60000); // +1 min
+        endDT = newEnd.toISOString().slice(0, 16);
+      }
+      start = { dateTime: startDT, timeZone };
+      end = { dateTime: endDT, timeZone };
     } else {
       alert('Task is missing required date or time information.');
       return;
@@ -161,6 +185,7 @@ export function useTasks() {
       start,
       end,
       recurrence: (typeof taskData.recurrence === 'string' && taskData.recurrence.length > 0) ? [taskData.recurrence] : undefined,
+      // extendedProperties: { private: { completed: taskData.completed ? "1" : "0" } }, // Placeholder for future
     });
     // Log the event object for debugging
     console.log("[addTask] Event object to send:", event);
@@ -182,12 +207,12 @@ export function useTasks() {
       });
       if (!res.ok) {
         const errorText = await res.text();
+        let userMsg = "Failed to add task. Google API error: " + errorText;
+        if (errorText.includes("dateTime")) userMsg += "\n\nCheck that your start and end times are valid.";
+        alert(userMsg);
         console.error("[addTask] Google Calendar API error:", res.status, errorText);
         if (res.status === 401 || res.status === 403) {
-          alert("Your Google session has expired or is invalid. Please sign in again.\n\n" + errorText);
           window.dispatchEvent(new Event("dot-gcal-token-updated"));
-        } else {
-          alert("Failed to add task. Google API error: " + errorText);
         }
         return;
       }
@@ -296,8 +321,20 @@ export function useTasks() {
     }
     // Listen for online event
     window.addEventListener("online", syncOfflineQueue);
+    // Load local-only tasks on mount
+    setTasks((prev: any[]) => {
+      const locals: any[] = loadLocalListTasks();
+      // Avoid duplicates
+      const ids = new Set(prev.map((t: any) => t.id));
+      return [...prev, ...locals.filter((t: any) => !ids.has(t.id))];
+    });
     return () => window.removeEventListener("online", syncOfflineQueue);
   }, [syncOfflineQueue, fetchTasks]);
+
+  // When local-only tasks change, persist them
+  useEffect(() => {
+    saveLocalListTasks(tasks.filter((t: any) => t.localOnly));
+  }, [tasks]);
 
   // Listen for Google token changes and refetch tasks
   useEffect(() => {
