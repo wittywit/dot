@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback } from "react"
 import type { Task } from "../types/task"
+import { toast } from "@/components/ui/use-toast";
 
 export function useNotifications(tasks: Task[], enabled: boolean) {
   // Request notification permission
@@ -26,25 +27,29 @@ export function useNotifications(tasks: Task[], enabled: boolean) {
   // Show notification
   const showNotification = useCallback(
     (title: string, options?: NotificationOptions) => {
-      if (!enabled || !("Notification" in window) || Notification.permission !== "granted") {
-        return
+      if (!enabled || !("Notification" in window)) {
+        return;
       }
-
+      if (Notification.permission !== "granted") {
+        toast({
+          title: "Notifications are blocked",
+          description: "Please enable notifications in your browser settings to receive reminders.",
+        });
+        return;
+      }
       const notification = new Notification(title, {
         icon: "/icon-192x192.png",
         badge: "/icon-192x192.png",
         ...options,
-      })
-
+      });
       // Auto-close after 5 seconds
       setTimeout(() => {
-        notification.close()
-      }, 5000)
-
-      return notification
+        notification.close();
+      }, 5000);
+      return notification;
     },
     [enabled],
-  )
+  );
 
   // Show task reminder
   const showTaskReminder = useCallback(

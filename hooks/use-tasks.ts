@@ -294,9 +294,13 @@ export function useTasks() {
     });
   };
 
-  // Show all tasks in the list view for now
+  // Show only user-added list tasks in the list view
   const getUnscheduledTasks = () => {
-    return tasks;
+    return tasks.filter((task) => {
+      // Exclude scheduled, all-day, recurring, and imported (has raw && raw.id)
+      const isUserListTask = !task.isScheduled && !task.isAllDay && !task.recurring && (!task.raw || !task.raw.id);
+      return isUserListTask;
+    });
   };
 
   return {
