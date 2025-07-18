@@ -60,12 +60,12 @@ export function TaskForm({ selectedDate, selectedTime, onSubmit, onClose, daySta
 
     if (isScheduled) {
       // Scheduled: send isAllDay: false, date, dateTime, and endDateTime
-      const dateTimeISO = `${actualTaskDate}T${time}:00`;
-      // Calculate end time
-      const [hour, minute] = time.split(":").map(Number);
       const startDateObj = new Date(`${actualTaskDate}T${time}:00`);
-      const endDateObj = new Date(startDateObj.getTime() + duration * 60000);
-      const endDateTimeISO = endDateObj.toISOString().slice(0,16);
+      const dateTimeISO = startDateObj.toISOString();
+      let taskDuration = Number(duration);
+      if (!taskDuration || isNaN(taskDuration) || taskDuration <= 0) taskDuration = 30;
+      const endDateObj = new Date(startDateObj.getTime() + taskDuration * 60000);
+      const endDateTimeISO = endDateObj.toISOString();
       let recurrence = undefined;
       if (recurring === "daily") recurrence = "RRULE:FREQ=DAILY";
       else if (recurring === "weekly") recurrence = "RRULE:FREQ=WEEKLY";
@@ -75,9 +75,9 @@ export function TaskForm({ selectedDate, selectedTime, onSubmit, onClose, daySta
         date: actualTaskDate,
         dateTime: dateTimeISO,
         endDateTime: endDateTimeISO,
-        duration,
+        duration: taskDuration,
         recurrence,
-      })
+      });
     } else {
       // Unscheduled: treat as all-day event for Google Calendar
       const today = new Date().toISOString().split("T")[0];

@@ -174,7 +174,7 @@ export function useTasks() {
       // Ensure end is after start
       if (new Date(endDT) <= new Date(startDT)) {
         const newEnd = new Date(new Date(startDT).getTime() + 60000); // +1 min
-        endDT = newEnd.toISOString().slice(0, 16);
+        endDT = newEnd.toISOString();
       }
       start = { dateTime: startDT, timeZone };
       end = { dateTime: endDT, timeZone };
