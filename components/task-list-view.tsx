@@ -30,14 +30,12 @@ export function TaskListView({ tasks, onTaskClick, onAddTask, onScheduleTask, on
     e.preventDefault()
     if (!newTaskTitle.trim()) return
 
-    // Always send isAllDay: true and date for quick-add tasks
-    const today = new Date().toISOString().split("T")[0];
+    // Create a local-only list task (not sent to Google Calendar)
     onAddTask({
       title: newTaskTitle.trim(),
       note: newTaskNote.trim(),
-      isAllDay: true,
-      date: today,
       isScheduled: false,
+      localOnly: true,
     })
 
     setNewTaskTitle("")

@@ -109,6 +109,14 @@ export function useTasks() {
 
   // Add task (create event)
   const addTask = async (taskData: any) => {
+    // If localOnly, just add to local state
+    if (taskData.localOnly) {
+      setTasks((prev) => [
+        ...prev,
+        { ...taskData, id: `local-${Date.now()}` },
+      ])
+      return
+    }
     const token = getAccessToken();
     if (!token) {
       alert("You must be signed in to add a task. Please sign in with Google.");
@@ -297,7 +305,8 @@ export function useTasks() {
   // Show only user-added list tasks in the list view
   const getUnscheduledTasks = () => {
     return tasks.filter((task) => {
-      // Exclude scheduled, all-day, recurring, and imported (has raw && raw.id)
+      // Include localOnly tasks, exclude scheduled, all-day, recurring, and imported
+      if (task.localOnly) return true;
       const isUserListTask = !task.isScheduled && !task.isAllDay && !task.recurring && (!task.raw || !task.raw.id);
       return isUserListTask;
     });
